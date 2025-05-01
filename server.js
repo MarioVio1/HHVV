@@ -1,6 +1,6 @@
 const express = require('express');
 const axios = require('axios');
-const ProxyAgent = require('proxy-agent');
+const { ProxyAgent } = require('proxy-agent');  // Destructure to use ProxyAgent directly
 
 const app = express();
 const port = 3000;
@@ -9,7 +9,7 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
 const proxyUrl = 'http://pzytldso-rotate:oybm1jw2kflp@p.webshare.io:80/';
-const agent = new ProxyAgent(proxyUrl);
+const agent = new ProxyAgent(proxyUrl); // Correct usage of ProxyAgent
 
 // Siti da cui estrarre link
 const sites = ['https://huhu.to', 'https://oha.to', 'https://kool.to', 'https://vavoo.to'];

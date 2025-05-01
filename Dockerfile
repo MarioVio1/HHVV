@@ -1,11 +1,18 @@
-FROM python:3.11-slim
+# Usa Node.js LTS
+FROM node:18
 
+# Cartella di lavoro nel container
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-RUN playwright install --with-deps chromium
+# Copia package.json e installa dipendenze
+COPY package*.json ./
+RUN npm install
 
+# Copia il resto del codice
 COPY . .
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Espone la porta del server
+EXPOSE 3000
+
+# Avvia il server
+CMD [ "npm", "start" ]

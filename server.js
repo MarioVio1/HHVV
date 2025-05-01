@@ -1,5 +1,6 @@
 const express = require('express');
-const puppeteer = require('puppeteer');  // Importiamo puppeteer
+const axios = require('axios');
+const cheerio = require('cheerio');  // Importiamo Cheerio
 
 const app = express();
 const port = 3000;
@@ -19,26 +20,33 @@ app.get('/', (req, res) => {
 app.get('/generate', async (req, res) => {
   let m3u = '#EXTM3U\n';
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [`--proxy-server=${proxyUrl}`],  // Configura il proxy
-  });
-  const page = await browser.newPage();
-
   for (const site of sites) {
     try {
-      await page.goto(site, { waitUntil: 'networkidle2' }); // Aspetta che la pagina si carichi
-
-      // Usa una selezione più precisa per prendere i link m3u8 (aggiorna questa parte se il sito cambia)
-      const links = await page.evaluate(() => {
-        const m3u8Links = [];
-        // Modifica il selettore in base alla struttura del sito
-        const elements = document.querySelectorAll('a[href*=".m3u8"]');
-        elements.forEach(element => m3u8Links.push(element.href));
-        return m3u8Links;
+      // Eseguiamo la richiesta HTTP con Axios
+      const response = await axios.get(site, {
+        proxy: {
+          host: 'pzytldso-rotate',
+          port: 80,
+          auth: {
+            username: 'oybm1jw2kflp',
+            password: '',
+          },
+        },
       });
 
-      // Aggiungi i link M3U8 trovati
+      // Carica il contenuto HTML nella variabile cheerio
+      const $ = cheerio.load(response.data);
+
+      // Cerca i link .m3u8 all'interno della pagina (modifica selettore se necessario)
+      const links = [];
+      $('a').each((i, el) => {
+        const href = $(el).attr('href');
+        if (href && href.includes('.m3u8')) {
+          links.push(href);
+        }
+      });
+
+      // Aggiungi i link M3U8 trovati al file M3U
       links.forEach(link => {
         m3u += `#EXTINF:-1, ${site.replace('https://', '')}\n${link}\n`;
       });
@@ -47,8 +55,6 @@ app.get('/generate', async (req, res) => {
       console.error(`Errore con ${site}:`, error.message);
     }
   }
-
-  await browser.close();
 
   res.setHeader('Content-Disposition', 'attachment; filename="playlist.m3u"');
   res.setHeader('Content-Type', 'audio/x-mpegurl');

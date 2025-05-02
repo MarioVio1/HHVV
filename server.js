@@ -8,11 +8,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 async function estraiM3U8(url) {
   try {
-    const response = await axios.get(url);
+    // Aggiungi il 'User-Agent' per simulare una richiesta da un browser
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+      }
+    });
+
+    // Usa Cheerio per caricare e analizzare il contenuto della pagina
     const $ = cheerio.load(response.data);
     const links = [];
 
-    // Estrai tutti i link .m3u8 dalle pagine
+    // Estrai i link con estensione .m3u8
     $('a').each((_, el) => {
       const href = $(el).attr('href');
       if (href && href.includes('.m3u8')) {
@@ -20,6 +27,7 @@ async function estraiM3U8(url) {
       }
     });
 
+    console.log(`Link trovati per ${url}:`, links); // Log dei link trovati
     return links;
   } catch (err) {
     console.error(`Errore su ${url}:`, err.message);
@@ -37,6 +45,7 @@ app.get('/playlist.m3u', async (req, res) => {
 
   let playlist = '#EXTM3U\n';
 
+  // Estrai i link da ogni sito
   for (const sito of siti) {
     const links = await estraiM3U8(sito);
     links.forEach((link, i) => {
@@ -44,6 +53,7 @@ app.get('/playlist.m3u', async (req, res) => {
     });
   }
 
+  // Imposta l'intestazione per il tipo di contenuto .m3u e invia la playlist
   res.setHeader('Content-Type', 'application/x-mpegURL');
   res.send(playlist);
 });

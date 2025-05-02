@@ -1,20 +1,25 @@
 const express = require('express');
-const axios = require('axios');
+const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 const path = require('path');
 
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Funzione base per estrarre .m3u8
 async function estraiM3U8(url) {
   try {
-    const { data } = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0'
-      }
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
-    const $ = cheerio.load(data);
+
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 0 });
+
+    const html = await page.content();
+    await browser.close();
+
+    const $ = cheerio.load(html);
     const links = [];
 
     $('a').each((_, el) => {
@@ -26,12 +31,11 @@ async function estraiM3U8(url) {
 
     return links;
   } catch (err) {
-    console.error(`Errore su ${url}`, err.message);
+    console.error(`Errore su ${url}:`, err.message);
     return [];
   }
 }
 
-// Endpoint playlist
 app.get('/playlist.m3u', async (req, res) => {
   const siti = [
     'https://huhu.to',
@@ -53,7 +57,6 @@ app.get('/playlist.m3u', async (req, res) => {
   res.send(playlist);
 });
 
-// Avvio server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server attivo su http://localhost:${PORT}`);

@@ -1,5 +1,5 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const axios = require('axios');
 const cheerio = require('cheerio');
 const path = require('path');
 
@@ -8,20 +8,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 async function estraiM3U8(url) {
   try {
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 0 });
-
-    const html = await page.content();
-    await browser.close();
-
-    const $ = cheerio.load(html);
+    const response = await axios.get(url);
+    const $ = cheerio.load(response.data);
     const links = [];
 
+    // Estrai tutti i link .m3u8 dalle pagine
     $('a').each((_, el) => {
       const href = $(el).attr('href');
       if (href && href.includes('.m3u8')) {

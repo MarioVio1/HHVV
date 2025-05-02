@@ -1,18 +1,37 @@
-# Usa Node.js LTS
-FROM node:18
+FROM node:20-slim
 
-# Cartella di lavoro nel container
+# Installa Chromium e dipendenze Puppeteer
+RUN apt-get update && apt-get install -y \
+    chromium \
+    ca-certificates \
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libgbm1 \
+    libnspr4 \
+    libnss3 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
+    --no-install-recommends && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Crea cartella app
 WORKDIR /app
 
-# Copia package.json e installa dipendenze
-COPY package*.json ./
-RUN npm install
-
-# Copia il resto del codice
+# Copia file
 COPY . .
 
-# Espone la porta del server
-EXPOSE 3000
+# Installa dipendenze
+RUN npm install
 
-# Avvia il server
-CMD [ "npm", "start" ]
+# Imposta variabile per Puppeteer
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+# Avvia app
+CMD ["node", "server.js"]
